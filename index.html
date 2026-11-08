@@ -1,0 +1,1001 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+</head>
+<body style="margin:0">
+<title>hopme for Ballet テスト版</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: one narrow column like a practice notebook; the countdown to the deadline is the hero, today's checklist sits right under it */
+:root{
+  --bg:#f5f2f6; --surface:#ffffff; --ink:#2a2031; --muted:#73677c; --line:#e4dde8;
+  --accent:#c2456c; --accent-soft:#f6dde6; --done:#9a72d8; --done-soft:#efe7fb;
+  --f-display:"Shippori Mincho B1","Hiragino Mincho ProN","Yu Mincho",serif;
+  --f-body:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+  --f-num:"IBM Plex Mono",ui-monospace,"SFMono-Regular",monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#18131c; --surface:#231c29; --ink:#f1eaf3; --muted:#a99cb2; --line:#352b3c;
+  --accent:#ec7598; --accent-soft:#3f2331; --done:#b99bf0; --done-soft:#2e2445; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#18131c; --surface:#231c29; --ink:#f1eaf3; --muted:#a99cb2; --line:#352b3c;
+  --accent:#ec7598; --accent-soft:#3f2331; --done:#b99bf0; --done-soft:#2e2445; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 48px}
+.wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.brand{font-family:var(--f-display);font-weight:800;font-size:22px;letter-spacing:.02em}
+.brand span{color:var(--accent)}
+.brand small{font-family:var(--f-body);font-size:13px;font-weight:500;color:var(--muted);letter-spacing:.04em;margin-left:6px}
+.tag{font-size:11px;letter-spacing:.08em;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 10px}
+.note{font-size:13px;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:12px;padding:10px 14px}
+h1,h2{text-wrap:balance;margin:0}
+.eyebrow{font-size:12px;letter-spacing:.12em;color:var(--muted);font-weight:500}
+/* hero */
+.hero{display:flex;flex-direction:column;gap:6px}
+.hero h1{font-family:var(--f-display);font-weight:800;font-size:clamp(24px,6.5vw,32px);line-height:1.35}
+.count{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-top:6px}
+.count .n{font-family:var(--f-num);font-weight:600;font-size:clamp(52px,16vw,72px);line-height:1;color:var(--accent);font-variant-numeric:tabular-nums}
+.count .u{font-size:15px;color:var(--muted)}
+.meta{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+/* week */
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.day{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:var(--muted)}
+.dot{width:100%;max-width:38px;aspect-ratio:1;border-radius:50%;border:1.5px solid var(--line);display:grid;place-items:center;
+  font-family:var(--f-num);font-size:11px;color:var(--muted);background:var(--surface)}
+.dot.part{border-color:var(--accent);color:var(--accent)}
+.dot.full{background:var(--done);border-color:var(--done);color:var(--surface)}
+.day.today .lbl{color:var(--ink);font-weight:700}
+/* cards */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:14px}
+.card-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.card h2{font-size:18px;font-weight:700}
+.progress{font-family:var(--f-num);font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums}
+.tasks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.task{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;border:1.5px solid var(--line);cursor:pointer;
+  user-select:none;transition:background .15s,border-color .15s}
+.task input{position:absolute;opacity:0;pointer-events:none}
+.box{flex:none;width:26px;height:26px;border-radius:8px;border:2px solid var(--muted);display:grid;place-items:center;transition:transform .15s}
+.box svg{width:16px;height:16px;opacity:0}
+.task.on{background:var(--done-soft);border-color:var(--done)}
+.task.on .box{background:var(--done);border-color:var(--done);transform:scale(1.08)}
+.task.on .box svg{opacity:1}
+.task.on .tname{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--done)}
+.task:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.cheer{font-size:14px;font-weight:700;color:var(--done);text-align:center}
+/* photos */
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.shot{display:flex;flex-direction:column;gap:6px;min-width:0}
+.frame{aspect-ratio:3/4;max-width:100%;border-radius:12px;overflow:hidden;background:var(--accent-soft);display:grid;place-items:center;
+  color:var(--muted);font-size:12px;text-align:center;padding:0}
+.frame img{width:100%;height:100%;object-fit:cover;display:block}
+.frame{position:relative}
+.frame svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.shotbtns{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.shotbtns .mv{min-height:30px}
+.shotbtns .mv.warn{border-color:var(--accent);color:var(--accent);font-weight:700}
+.shot select{width:100%;font:inherit;font-size:13px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.pdate{display:flex;flex-direction:column;gap:4px}
+.pdate label{font-size:13px;font-weight:700}
+.dedit{display:flex;flex-direction:column;gap:6px}
+.dedit input{font-size:14px;padding:6px 8px}
+.dedit .wbtns{justify-content:center}
+.shot .cap{font-size:12px;color:var(--muted);text-align:center;font-family:var(--f-num)}
+.diff{font-size:13px;color:var(--muted);text-align:center}
+.pe{position:fixed;inset:0;z-index:50;background:rgba(20,14,24,.72);display:flex;align-items:center;justify-content:center;padding:16px}
+.pe-box{background:var(--surface);color:var(--ink);border-radius:16px;padding:16px;width:100%;max-width:520px;max-height:100%;overflow:auto;display:flex;flex-direction:column;gap:10px}
+.pe-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.pe-head h2{margin:0;font-size:18px}
+.pe-hint{font-size:13px;color:var(--muted);margin:0;line-height:1.6}
+.pe-stage{display:flex;justify-content:center;background:var(--bg);border-radius:12px;overflow:hidden}
+#peCanvas,#amCanvas{max-width:100%;max-height:56vh;touch-action:none;cursor:crosshair;display:block}
+.pe-actions{display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap}
+.pe-actions .btn{flex:1 1 auto}
+/* buttons & forms */
+.btn{font:inherit;font-weight:700;font-size:15px;border:0;border-radius:12px;padding:12px 16px;cursor:pointer;background:var(--accent);color:#fff;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn.ghost{background:transparent;color:var(--accent);border:1.5px solid var(--accent)}
+.btn.quiet{background:transparent;color:var(--muted);font-weight:500;font-size:14px;padding:8px}
+.btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.btn[disabled]{opacity:.5;cursor:default}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:13px;font-weight:700}
+.field .hint{font-size:12px;color:var(--muted)}
+.wtext{margin:0;font-size:17px;font-weight:700;line-height:1.5}
+.wtext.empty{color:var(--muted);font-weight:500;font-size:15px}
+.wbadge{display:inline-block;font-size:12px;font-weight:700;color:var(--surface);background:var(--done);border-radius:999px;padding:1px 10px;margin-left:6px;vertical-align:2px}
+.wform{display:flex;gap:8px}
+.wform input{flex:1;min-width:0}
+.wbtns{display:flex;gap:8px;flex-wrap:wrap}
+.dot.future{border-style:dashed;opacity:.55}
+.photoday{display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--done-soft);border-radius:12px;padding:10px 14px;font-size:14px;font-weight:700}
+.photoday span{min-width:0}
+select#gPhotoDay{font:inherit;font-size:16px;padding:11px 12px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);width:100%}
+input[type=text],input[type=date]{font:inherit;font-size:16px;padding:11px 12px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);width:100%}
+input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.taskrow{display:flex;gap:8px}
+.taskrow input{flex:1;min-width:0}
+.icon-btn{flex:none;width:44px;border-radius:10px;border:1.5px solid var(--line);background:transparent;color:var(--muted);font-size:20px;cursor:pointer}
+.taskedit{display:flex;flex-direction:column;gap:8px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font:inherit;font-size:13px;min-width:36px;height:34px;border-radius:999px;border:1.5px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;padding:0 10px}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+.chip.all{border-style:dashed}
+.chip:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.rest{font-size:14px;color:var(--muted);text-align:center;padding:10px 0}
+[hidden]{display:none!important}
+/* Ballet: no weekly goal (a week is too short to push flexibility safely); keep only the weekly record */
+#wView,#wForm,.witems,#wLast{display:none!important}
+.daynav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:6px 0 2px}
+.daynav .nv{flex:none;width:48px;height:42px;border-radius:12px;border:1.5px solid var(--line);background:transparent;color:var(--ink);font:inherit;font-size:20px;line-height:1;cursor:pointer}
+.daynav .nv:disabled{opacity:.3;cursor:default}
+.daynav .nv:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.daynav .dl{flex:1;text-align:center;font-size:13px;color:var(--muted)}
+.dhint{font-size:12px;color:var(--muted);margin:4px 0 8px}
+.day.pick{cursor:pointer}
+.day.pick:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:8px}
+.day.viewing .lbl{text-decoration:underline;text-underline-offset:3px;color:var(--ink)}
+.lastrow:not([hidden]){display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:space-between}
+.task-li{display:flex;gap:8px;align-items:stretch}
+.task-li .task{flex:1;min-width:0}
+.tx{display:flex;flex-direction:column;min-width:0}
+.from{font-size:11px;color:var(--accent);font-weight:500}
+.task.little .box{background:var(--done-soft);border-color:var(--done)}
+.task.little .tname{text-decoration:none;color:var(--ink,inherit)}
+.tag{display:inline-block;margin-left:6px;font-size:11px;color:var(--done);font-weight:600}
+.mv{flex:none;font:inherit;font-size:12px;border-radius:12px;border:1.5px solid var(--line);background:transparent;color:var(--muted);padding:0 10px;cursor:pointer}
+.mv:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.carry{display:flex;flex-direction:column;gap:8px;background:var(--accent-soft);border-radius:12px;padding:12px 14px}
+.carry-head{font-size:13px;font-weight:700}
+.carry-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.carry-row{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:14px}
+.carry-row span{min-width:0}
+.btn.small{font-size:13px;padding:7px 12px;border-radius:10px;flex:none}
+.witems{display:flex;flex-direction:column;gap:8px}
+.aiprop{background:var(--accent-soft);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.aiprop .hint{font-size:13px;color:var(--ink);margin:0;font-weight:500}
+.aiprop label{display:flex;gap:10px;align-items:center;font-size:14px}
+.aiprop input{width:18px;height:18px;accent-color:var(--accent);flex:none}
+.ahead{border-top:1px dashed var(--line);padding-top:12px}
+.ahead summary{cursor:pointer;font-size:14px;font-weight:700;color:var(--accent);list-style:none}
+.ahead summary::-webkit-details-marker{display:none}
+.ahead summary::before{content:"＋ "}
+.ahead[open] summary::before{content:"－ "}
+.ahead[open] summary{margin-bottom:10px}
+.ahead .hint{font-size:12px;color:var(--muted);margin:0 0 8px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{display:flex;flex-direction:column;gap:2px;background:var(--bg);border-radius:12px;padding:12px 10px;min-width:0}
+.stat .v{font-family:var(--f-num);font-weight:600;font-size:26px;line-height:1.1;color:var(--ink);font-variant-numeric:tabular-nums}
+.stat .v small{font-family:var(--f-body);font-size:12px;font-weight:500;color:var(--muted);margin-left:2px}
+.stat .k{font-size:12px;color:var(--muted)}
+.stat.hl .v{color:var(--accent)}
+.bars{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.bar-row{display:flex;flex-direction:column;gap:4px}
+.bar-top{display:flex;justify-content:space-between;gap:8px;font-size:14px}
+.bar-top span:first-child{min-width:0}
+.bar-top .c{font-family:var(--f-num);color:var(--muted);font-variant-numeric:tabular-nums;flex:none}
+.track{height:8px;border-radius:999px;background:var(--line);overflow:hidden}
+.fill{height:100%;border-radius:999px;background:var(--done)}
+.sub{font-size:13px;font-weight:700;color:var(--muted)}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row .btn{flex:1}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);
+  padding:10px 18px;border-radius:999px;font-size:14px;font-weight:500;max-width:calc(100% - 32px);z-index:5}
+.loading{color:var(--muted);text-align:center;padding:40px 0}
+@media (min-width:760px){
+  .wrap{max-width:1120px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;align-items:start;padding:0 8px}
+  .wrap>.bar,.wrap>#saveNote,.wrap>#loading,#editGoal{grid-column:1 / -1}
+  .wrap>#setup{grid-column:1 / -1;width:100%;max-width:560px;justify-self:center}
+  .hero{grid-column:1;grid-row:2}
+  .s-week{grid-column:2;grid-row:2}
+  .s-today{grid-column:1;grid-row:3}
+  .s-stats{grid-column:2;grid-row:3 / span 2}
+  .s-photo{grid-column:1;grid-row:4}
+  #editGoal{grid-row:5;justify-self:center}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <div class="bar">
+    <div class="brand">hop<span>me</span><small>for Ballet</small></div>
+    <div class="tag">テスト版</div>
+  </div>
+  <div id="saveNote" class="note" hidden>このブラウザでは記録を保存できません（プライベートブラウズでは保存されません）。</div>
+  <div id="localNote" class="note">記録と写真は、このスマホの中だけに保存されます（だれにも送られません）。ブラウザのデータを消したり、機種変更すると消えます。</div>
+  <div id="loading" class="loading">読み込み中…</div>
+
+  <!-- Setup -->
+  <form id="setup" class="card" hidden>
+    <div class="card-head"><h2 id="setupTitle">あなたの目標を決めよう</h2></div>
+    <div class="field">
+      <label for="gTitle">目標</label>
+      <input id="gTitle" type="text" maxlength="60" required>
+      <span class="hint">例は入れてあります。自分の言葉に書きかえてください</span>
+    </div>
+    <div class="field">
+      <label for="gDeadline">期限（発表会・試験日など）</label>
+      <input id="gDeadline" type="date" required>
+    </div>
+    <div class="field">
+      <label for="gPhotoDay">写真を撮る曜日</label>
+      <select id="gPhotoDay"><option value="">決めない</option><option value="1">毎週 月曜</option><option value="2">毎週 火曜</option><option value="3">毎週 水曜</option><option value="4">毎週 木曜</option><option value="5">毎週 金曜</option><option value="6">毎週 土曜</option><option value="0">毎週 日曜</option></select>
+      <span class="hint">その曜日に「今日は写真の日」とお知らせします</span>
+    </div>
+    <div class="field">
+      <label>タスクとやる曜日</label>
+      <span class="hint">曜日をタップして、やる日を選んでください</span>
+      <div id="taskInputs" class="tasks"></div>
+      <button type="button" id="addTask" class="btn quiet">＋ タスクを追加</button>
+    </div>
+    <div class="row">
+      <button type="button" id="cancelEdit" class="btn ghost" hidden>やめる</button>
+      <button type="submit" class="btn" id="saveGoal">この目標で始める</button>
+    </div>
+  </form>
+
+  <!-- Home -->
+  <div id="home" hidden style="display:contents">
+    <section class="hero">
+      <div class="eyebrow">目標</div>
+      <h1 id="hTitle"></h1>
+      <div class="count"><span class="u">期限まで あと</span><span class="n" id="hDays">0</span><span class="u">日</span></div>
+      <div class="meta" id="hMeta"></div>
+    </section>
+
+    <section class="card s-week" aria-labelledby="wHead">
+      <div class="card-head"><h2 id="wHead">今週の記録</h2><span class="progress" id="wRange"></span></div>
+      <div id="wView" class="field">
+        <p class="wtext" id="wText"></p>
+        <div class="wbtns"><button type="button" class="btn small ghost" id="wEdit">書く</button><button type="button" class="btn small" id="wDone">達成！</button></div>
+      </div>
+      <form class="wform" id="wForm" hidden><input type="text" id="wInput" maxlength="60" aria-label="今週の目標" placeholder="前後開脚で手が床につく"><button type="submit" class="btn small">保存</button></form>
+      <div class="witems">
+        <div class="bar-top"><span class="sub">今週だけのタスク</span><span class="c" id="wItemsCount"></span></div>
+        <ul class="tasks" id="wItems"></ul>
+        <form class="wform" id="wAddForm"><input type="text" id="wAddInput" maxlength="40" aria-label="今週だけのタスクを追加" placeholder="今週だけのタスクを追加"><button type="submit" class="btn small ghost">追加</button></form>
+        <button type="button" class="btn small" id="wAi" hidden>AIにタスクを考えてもらう</button>
+        <div class="aiprop" id="wAiBox" hidden>
+          <p class="hint">AIからの提案です。入れたいものにチェックしてください</p>
+          <div id="wAiList" class="witems"></div>
+          <div class="wbtns"><button type="button" class="btn small" id="wAiOk">選んだタスクを追加</button><button type="button" class="btn small quiet" id="wAiNo">やめる</button></div>
+        </div>
+      </div>
+      <div class="bar-row"><div class="bar-top"><span>毎日のタスク（今週）</span><span class="c" id="wPct"></span></div><div class="track"><div class="fill" id="wFill" style="width:0"></div></div></div>
+      <div class="week" id="week" aria-label="今週の記録"></div>
+      <div class="meta" id="wLast" hidden></div>
+    </section>
+
+    <section class="card s-today">
+      <div class="card-head"><h2 id="tHead">今日のタスク</h2><span class="progress" id="tProg"></span></div>
+      <div class="daynav"><button type="button" class="nv" id="dPrev" aria-label="前の日">‹</button><span class="dl" id="dLabel"></span><button type="button" class="nv" id="dNext" aria-label="次の日">›</button></div>
+      <div class="wbtns"><button type="button" class="btn small ghost" id="dToday" hidden>今日に戻る</button></div>
+      <p class="dhint" id="dHint" hidden>先の日のタスクは、その日になったらチェックできます。先にやったときは、下の「今週の先のタスクを、今日やった」（日曜日は「来週のタスクを、今日やった」）を使ってください</p>
+      <div class="carry" id="carry" hidden>
+        <div class="carry-head" id="carryHead">昨日の分</div>
+        <ul class="carry-list" id="carryList"></ul>
+        <button type="button" class="btn quiet" id="carryDismiss">今回は移動しない</button>
+      </div>
+      <div class="photoday" id="photoDay" hidden></div>
+      <ul class="tasks" id="taskList"></ul>
+      <div class="rest" id="rest" hidden>今日はお休みの日です。しっかり体を休めよう</div>
+      <div class="wbtns"><button type="button" class="btn small quiet" id="offBtn" hidden>今日はお休みにする</button></div>
+      <div class="cheer" id="cheer" hidden>今日のタスク、ぜんぶ完了！</div>
+      <details class="ahead" id="ahead" hidden>
+        <summary id="aheadSum">今週の先のタスクを、今日やった</summary>
+        <p class="hint">先にやったタスクは今日の分に入り、その曜日からは消えます</p>
+        <ul class="carry-list" id="aheadList"></ul>
+      </details>
+    </section>
+
+    <section class="card s-stats" aria-labelledby="sHead">
+      <div class="card-head"><h2 id="sHead">これまでの頑張り</h2><span class="progress" id="sSince"></span></div>
+      <div class="stats">
+        <div class="stat hl"><span class="v" id="sTotal">0</span><span class="k">チェックした数</span></div>
+        <div class="stat"><span class="v" id="sDays">0</span><span class="k">できた日</span></div>
+        <div class="stat"><span class="v" id="sBest">0</span><span class="k">今月できた日</span></div>
+      </div>
+      <div class="sub">タスクごとの回数</div>
+      <ul class="bars" id="sBars"></ul>
+    </section>
+
+    <section class="card s-photo">
+      <div class="card-head"><h2>写真で比べる</h2><span class="progress" id="pCount"></span></div>
+      <div class="compare">
+        <div class="shot"><select id="selA" aria-label="比べる写真（前）"></select><div class="frame" id="frA">写真を追加すると<br>ここに出ます</div><div class="cap" id="capA"></div><div class="shotbtns" id="btnsA" hidden><button type="button" class="mv" data-act="date">日付</button><button type="button" class="mv" data-act="angle">角度を測る</button><button type="button" class="mv" data-act="del">消す</button></div><div class="dedit" id="deA" hidden><input type="date" aria-label="撮った日"><div class="wbtns"><button type="button" class="btn small" data-act="dsave">保存</button><button type="button" class="btn small quiet" data-act="dcancel">やめる</button></div></div></div>
+        <div class="shot"><select id="selB" aria-label="比べる写真（後）"></select><div class="frame" id="frB">2枚目から<br>比べられます</div><div class="cap" id="capB"></div><div class="shotbtns" id="btnsB" hidden><button type="button" class="mv" data-act="date">日付</button><button type="button" class="mv" data-act="angle">角度を測る</button><button type="button" class="mv" data-act="del">消す</button></div><div class="dedit" id="deB" hidden><input type="date" aria-label="撮った日"><div class="wbtns"><button type="button" class="btn small" data-act="dsave">保存</button><button type="button" class="btn small quiet" data-act="dcancel">やめる</button></div></div></div>
+      </div>
+      <div class="diff" id="diff" hidden></div>
+      <label class="btn ghost" id="addPhotoBtn" for="photoInput">写真を追加</label>
+      <input id="photoInput" type="file" accept="image/*" multiple style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden" tabindex="-1">
+    </section>
+
+    <button type="button" class="btn quiet" id="editGoal">目標・タスクを編集</button>
+  </div>
+</div>
+<div class="pe" id="pe" hidden role="dialog" aria-modal="true" aria-labelledby="peTitle">
+  <div class="pe-box">
+    <div class="pe-head"><h2 id="peTitle">顔をぼかす</h2><span class="progress" id="peCount"></span></div>
+    <p class="pe-hint">顔のところを<b>タップ</b>するか、<b>指でなぞって四角く囲む</b>と、モザイクがかかります。保存されるのは、ぼかしたあとの写真だけです。</p>
+    <div class="pdate"><label for="peDate">撮った日</label><input id="peDate" type="date"></div>
+    <div class="pe-stage"><canvas id="peCanvas" aria-label="ぼかす場所を選ぶ写真"></canvas></div>
+    <div class="wbtns"><button type="button" class="btn small quiet" id="peUndo">ひとつ戻す</button></div>
+    <div class="pe-actions"><button type="button" class="btn ghost" id="peSkip">この写真は入れない</button><button type="button" class="btn" id="peOk">ぼかさずに保存</button></div>
+  </div>
+</div>
+<div class="pe" id="am" hidden role="dialog" aria-modal="true" aria-labelledby="amTitle">
+  <div class="pe-box">
+    <div class="pe-head"><h2 id="amTitle">角度を測る</h2><span class="progress" id="amDeg"></span></div>
+    <p class="pe-hint" id="amHint"></p>
+    <div class="pe-stage"><canvas id="amCanvas" aria-label="角度を測る写真"></canvas></div>
+    <div class="wbtns"><button type="button" class="btn small quiet" id="amReset">やり直す</button><button type="button" class="btn small quiet" id="amClear" hidden>角度の記録を消す</button></div>
+    <div class="pe-actions"><button type="button" class="btn ghost" id="amCancel">やめる</button><button type="button" class="btn" id="amOk" disabled>この角度を記録</button></div>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var CHECK = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="color:var(--surface)"><path d="M3 8.5l3.2 3L13 4.5"/></svg>';
+  var WD = ['日','月','火','水','木','金','土'];
+  var state = { goal: null };
+  var docRef = null, assets = null, canSave = false, sampleFn = null; // tester edition: no Claude login, so no db/assets/AI
+  var saving = false, pending = false;
+  var viewDate = null; // null = today; otherwise the day shown in the task list
+  function vday(){ return viewDate || dkey(); }
+
+  function dkey(d){ var x=d||new Date(); return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); }
+  function parseKey(k){ var p=k.split('-'); return new Date(+p[0], +p[1]-1, +p[2]); }
+  function daysBetween(a,b){ return Math.round((parseKey(b)-parseKey(a))/86400000); }
+  function fmt(k){ var d=parseKey(k); return (d.getMonth()+1)+'/'+d.getDate()+'（'+WD[d.getDay()]+'）'; }
+  function rid(){ return Math.random().toString(36).slice(2,9); }
+  function clone(o){ return JSON.parse(JSON.stringify(o)); }
+
+  var toastT;
+  function toast(msg){ var t=$('toast'); t.textContent=msg; t.hidden=false; clearTimeout(toastT); toastT=setTimeout(function(){ t.hidden=true; }, 2200); }
+
+  /* tester edition: everything stays on this device (localStorage for records, IndexedDB for photos) */
+  var LS_KEY='hopme-ballet-tester-v1';
+  var idb=null;
+  function idbOpen(){ return new Promise(function(res){ try{ var r=indexedDB.open('hopme-ballet-tester',1); r.onupgradeneeded=function(){ r.result.createObjectStore('photos'); }; r.onsuccess=function(){ res(r.result); }; r.onerror=function(){ res(null); }; }catch(e){ res(null); } }); }
+  function idbDo(mode, fn){ return new Promise(function(res,rej){ if(!idb){ rej(new Error('no idb')); return; } try{ var tx=idb.transaction('photos',mode); var st=tx.objectStore('photos'); var q=fn(st); tx.oncomplete=function(){ res(q&&q.result); }; tx.onerror=function(){ rej(tx.error); }; tx.onabort=function(){ rej(tx.error); }; }catch(e){ rej(e); } }); }
+  function photoPut(id,data){ return idbDo('readwrite', function(st){ return st.put(data,id); }); }
+  function photoGet(id){ return idbDo('readonly', function(st){ return st.get(id); }); }
+  function photoDel(id){ return idbDo('readwrite', function(st){ return st.delete(id); }).catch(function(){}); }
+  async function save(){
+    if(!canSave){ return; }
+    try{
+      var g=clone(state.goal);
+      (g.photos||[]).forEach(function(p){ delete p.data; });
+      localStorage.setItem(LS_KEY, JSON.stringify({ goal: g, updatedAt: Date.now() }));
+    }catch(e){ toast('保存できませんでした。スマホの空き容量を確認してください'); }
+  }
+
+  /* ---------- setup ---------- */
+  var ALL=[0,1,2,3,4,5,6], taskSeq=0;
+  function taskDays(t){ return (t.days && t.days.length) ? t.days : ALL; }
+  // a task counts only on days between when it was added and when it was removed, so editing never rewrites the past
+  function activeOn(t,k){ return (!t.addedAt || t.addedAt<=k) && (!t.removedAt || t.removedAt>k); }
+  function isActive(t){ return !t.removedAt; }
+  function scheduledOn(k){ var w=parseKey(k).getDay(); return state.goal.tasks.filter(function(t){ return activeOn(t,k) && taskDays(t).indexOf(w)>=0; }); }
+  // tasks for a day = scheduled ones, minus those moved away, plus those moved in from another day
+  function isOff(k){ return !!(state.goal.off && state.goal.off[k]); }
+  function tasksOn(k){ return isOff(k) ? [] : plannedOn(k); }
+  function plannedOn(k){
+    var g=state.goal, mv=(g.moved&&g.moved[k])||[], ex=(g.extra&&g.extra[k])||[];
+    var out=scheduledOn(k).filter(function(t){ return mv.indexOf(t.id)<0; });
+    ex.forEach(function(e){
+      if(mv.indexOf(e.id)>=0) return;
+      var t=g.tasks.filter(function(x){ return x.id===e.id; })[0];
+      if(t && out.indexOf(t)<0) out.push(t);
+    });
+    return out;
+  }
+  function fromOf(k,id){ var ex=(state.goal.extra&&state.goal.extra[k])||[]; var e=ex.filter(function(x){ return x.id===id; })[0]; return e?e.from:null; }
+  function hasTask(k,id){ return tasksOn(k).some(function(t){ return t.id===id; }); }
+  function shift(k,n){ var d=parseKey(k); d.setDate(d.getDate()+n); return dkey(d); }
+  function moveTask(id, from, to){
+    var g=state.goal; g.moved=g.moved||{}; g.extra=g.extra||{};
+    (g.moved[from]=g.moved[from]||[]).push(id);
+    (g.extra[to]=g.extra[to]||[]).push({ id:id, from:from });
+  }
+  function addTaskInput(val, days){
+    var n=++taskSeq, sel=days||ALL;
+    var box=document.createElement('div'); box.className='taskedit';
+    box.innerHTML='<div class="taskrow"><input type="text" maxlength="40" aria-label="タスク'+n+'" id="task-in-'+n+'"><button type="button" class="icon-btn" aria-label="このタスクを削除">×</button></div><div class="chips" role="group" aria-label="やる曜日"></div>';
+    box.querySelector('input').value=val||'';
+    box.querySelector('.icon-btn').onclick=function(){ box.remove(); };
+    var chips=box.querySelector('.chips');
+    [1,2,3,4,5,6,0].forEach(function(w){
+      var b=document.createElement('button'); b.type='button'; b.className='chip'; b.textContent=WD[w]; b.dataset.w=w;
+      b.setAttribute('aria-pressed', sel.indexOf(w)>=0?'true':'false');
+      b.onclick=function(){ b.setAttribute('aria-pressed', b.getAttribute('aria-pressed')==='true'?'false':'true'); };
+      chips.appendChild(b);
+    });
+    var all=document.createElement('button'); all.type='button'; all.className='chip all'; all.textContent='毎日';
+    all.onclick=function(){ chips.querySelectorAll('.chip[data-w]').forEach(function(c){ c.setAttribute('aria-pressed','true'); }); };
+    chips.appendChild(all);
+    $('taskInputs').appendChild(box);
+  }
+  function showSetup(editing){
+    var g = editing ? state.goal : null;
+    var d = new Date(); d.setDate(d.getDate()+90);
+    $('setupTitle').textContent = editing ? '目標・タスクを編集' : 'あなたの目標を決めよう';
+    $('saveGoal').textContent = editing ? '保存する' : 'この目標で始める';
+    $('cancelEdit').hidden = !editing;
+    $('gTitle').value = g ? g.title : '発表会までに前後開脚で床にぺたっと座る';
+    $('gDeadline').value = g ? g.deadline : dkey(d);
+    $('gPhotoDay').value = (g && g.photoDay!=null) ? String(g.photoDay) : (g ? '' : '0');
+    $('taskInputs').innerHTML='';
+    var list = g ? g.tasks.filter(isActive).map(function(t){ return [t.name, taskDays(t)]; }) : [
+      ['開脚ストレッチ 10分', ALL],
+      ['筋トレ・体幹 15分', [1,3]],
+      ['背筋トレーニング 10分', [2,4,5]],
+      ['寝る前の縦動画はやめて、すぐ寝る', ALL]
+    ];
+    list.forEach(function(x){ addTaskInput(x[0], x[1]); });
+    $('home').hidden=true; $('setup').hidden=false; $('loading').hidden=true;
+    window.scrollTo(0,0);
+  }
+  $('addTask').onclick=function(){ addTaskInput(''); var ins=$('taskInputs').querySelectorAll('input'); ins[ins.length-1].focus(); };
+  $('cancelEdit').onclick=function(){ showHome(); };
+  $('setup').addEventListener('submit', function(e){
+    e.preventDefault();
+    var items=[].map.call($('taskInputs').querySelectorAll('.taskedit'), function(b){
+      return { name: b.querySelector('input').value.trim(),
+        days: [].filter.call(b.querySelectorAll('.chip[data-w]'), function(c){ return c.getAttribute('aria-pressed')==='true'; }).map(function(c){ return +c.dataset.w; }).sort() };
+    }).filter(function(x){ return x.name; });
+    if(!items.length){ toast('タスクを1つ以上入れてください'); return; }
+    if(items.some(function(x){ return !x.days.length; })){ toast('やる曜日を1つ以上選んでください'); return; }
+    var title=$('gTitle').value.trim(), dl=$('gDeadline').value;
+    if(!title || !dl){ toast('目標と期限を入れてください'); return; }
+    var old = state.goal;
+    var today=dkey();
+    var tasks = items.map(function(x){
+      var hit = old && old.tasks.filter(function(t){ return t.name===x.name; })[0];
+      var o = { id: hit ? hit.id : rid(), name: x.name, days: x.days };
+      var added = hit ? hit.addedAt : (old ? today : '');
+      if(added) o.addedAt = added;
+      return o;
+    });
+    if(old) old.tasks.forEach(function(t){
+      if(!tasks.some(function(n){ return n.id===t.id; })){ var r=clone(t); if(!r.removedAt) r.removedAt=today; tasks.push(r); }
+    });
+    state.goal = {
+      title: title, deadline: dl,
+      photoDay: $('gPhotoDay').value==='' ? null : +$('gPhotoDay').value,
+      weeks: old && old.weeks ? old.weeks : {},
+      start: old ? old.start : dkey(),
+      tasks: tasks,
+      checks: old ? old.checks : {},
+      moved: old && old.moved ? old.moved : {},
+      extra: old && old.extra ? old.extra : {},
+      carryDismissed: old && old.carryDismissed ? old.carryDismissed : '',
+      photos: old ? old.photos : []
+    };
+    save(); toast(old ? '保存しました' : '目標をセットしました。今日から始めよう'); showHome();
+  });
+
+  /* ---------- home ---------- */
+  function showHome(){ $('setup').hidden=true; $('loading').hidden=true; $('home').hidden=false; render(); }
+  function doneCount(k){
+    var ids=(state.goal.checks[k]||[]), valid=tasksOn(k).map(function(t){return t.id;});
+    return ids.filter(function(i){ return valid.indexOf(i)>=0; }).length;
+  }
+  function isLittle(k,id){ var l=(state.goal.little&&state.goal.little[k])||[]; return l.indexOf(id)>=0; }
+  function monthDays(){
+    // days this month with at least one check (a little counts too). Never goes down.
+    var t=dkey(), k=t.slice(0,8)+'01', n=0;
+    if(k<state.goal.start) k=state.goal.start;
+    for(var i=0;i<31 && k<=t;i++, k=shift(k,1)){ if(doneCount(k)>0) n++; }
+    return n;
+  }
+  function render(){
+    var g=state.goal, t=dkey();
+    $('hTitle').textContent=g.title;
+    var left=daysBetween(t,g.deadline);
+    $('hDays').textContent=Math.max(0,left);
+    var since=daysBetween(g.start,t)+1, m=monthDays();
+    $('hMeta').textContent='期限 '+g.deadline.replace(/-/g,'/')+'　|　'+since+'日目'+(m?'　|　今月'+m+'日できた':'');
+
+    renderWeek(t);
+
+    // tasks
+    var vd=vday(), isToday=(vd===t), isFuture=(vd>t);
+    var list=$('taskList'); list.innerHTML='';
+    var on=(g.checks[vd]||[]), todays=tasksOn(vd);
+    $('tHead').textContent=isToday?'今日のタスク（'+WD[new Date().getDay()]+'曜）':fmt(vd)+'のタスク';
+    $('dLabel').textContent=isToday?fmt(t):(isFuture?'まだ先の日です':'過去の日。チェックし忘れを直せます');
+    $('dPrev').disabled=!(vd>g.start); $('dNext').disabled=!(vd<shift(t,7));
+    $('dToday').hidden=isToday; $('dHint').hidden=!isFuture;
+    var tmr=shift(vd,1);
+    todays.forEach(function(task){
+      var li=document.createElement('li'); li.className='task-li';
+      var checked=on.indexOf(task.id)>=0, from=fromOf(vd,task.id), lit=checked&&isLittle(vd,task.id);
+      li.innerHTML='<label class="task'+(checked?' on':'')+(lit?' little':'')+'"><input type="checkbox" id="chk-'+task.id+'"'+(checked?' checked':'')+(isFuture?' disabled':'')+'><span class="box">'+CHECK+'</span><span class="tx"><span class="tname"></span>'+(from?'<span class="from">'+fmt(from)+(from>vd?'の分を先取り':'から移動')+'</span>':'')+'</span></label>';
+      li.querySelector('.tname').textContent=task.name;
+      if(lit){ var tg=document.createElement('span'); tg.className='tag'; tg.textContent='ちょっとだけ'; li.querySelector('.tname').after(tg); }
+      li.querySelector('input').addEventListener('change', function(ev){ toggle(task.id, ev.target.checked); });
+      if(!checked && !isFuture){
+        var lb=document.createElement('button'); lb.type='button'; lb.className='mv'; lb.textContent='ちょっと';
+        lb.setAttribute('aria-label', task.name+'をちょっとだけやった');
+        lb.onclick=function(){ little(task.id); };
+        li.appendChild(lb);
+      }
+      if(isToday && !checked && !hasTask(tmr, task.id)){
+        var b=document.createElement('button'); b.type='button'; b.className='mv'; b.textContent='明日へ';
+        b.setAttribute('aria-label', task.name+'を明日に回す');
+        b.onclick=function(){ moveTask(task.id, t, tmr); render(); save(); toast('「'+task.name+'」を明日に回しました'); };
+        li.appendChild(b);
+      }
+      list.appendChild(li);
+    });
+
+    // yesterday's leftovers
+    var y=shift(t,-1), yon=(g.checks[y]||[]);
+    var left = (isToday && y>=g.start && g.carryDismissed!==y) ?tasksOn(y).filter(function(x){ return yon.indexOf(x.id)<0 && !hasTask(t, x.id); }) : [];
+    var cl=$('carryList'); cl.innerHTML='';
+    $('carry').hidden=!left.length;
+    $('carryHead').textContent='昨日（'+WD[parseKey(y).getDay()]+'）の分 '+left.length+'件。今日やる？';
+    left.forEach(function(x){
+      var li=document.createElement('li'); li.className='carry-row';
+      li.innerHTML='<span></span><button type="button" class="btn small">今日やる</button>';
+      li.querySelector('span').textContent=x.name;
+      li.querySelector('button').onclick=function(){ moveTask(x.id, y, t); render(); save(); toast('「'+x.name+'」を今日のタスクに入れました'); };
+      cl.appendChild(li);
+    });
+    // tasks scheduled later this week, done ahead today
+    // 日曜日は今週の先がないので、来週（月〜日）の分を先取りできるようにする
+    var ah=$('aheadList'); ah.innerHTML=''; var seen={}, thisEnd=shift(weekStart(t),6), wEnd=(thisEnd===t)?shift(t,7):thisEnd, cnt=0;
+    $('aheadSum').textContent=(thisEnd===t)?'来週のタスクを、今日やった':'今週の先のタスクを、今日やった';
+    for(var k2=shift(t,1); k2<=wEnd; k2=shift(k2,1)){
+      tasksOn(k2).forEach(function(x){
+        if(seen[x.id] || hasTask(t,x.id)) return; seen[x.id]=1; cnt++;
+        var from=k2, li=document.createElement('li'); li.className='carry-row';
+        li.innerHTML='<span></span><button type="button" class="btn small ghost">今日やった</button>';
+        li.querySelector('span').textContent=x.name+'（'+(from>thisEnd?'来週':'')+WD[parseKey(from).getDay()]+'）';
+        li.querySelector('button').onclick=function(){
+          moveTask(x.id, from, t);
+          var arr=(g.checks[t]||[]).slice(); if(arr.indexOf(x.id)<0) arr.push(x.id); g.checks[t]=arr;
+          render(); save(); toast('「'+x.name+'」を先取りしました。えらい！');
+        };
+        ah.appendChild(li);
+      });
+    }
+    $('ahead').hidden=!(cnt && isToday);
+
+    var dc=doneCount(vd);
+    $('tProg').textContent=todays.length ? dc+' / '+todays.length : '';
+    var off=isOff(vd), planned=plannedOn(vd).length;
+    $('rest').textContent= off ? (isToday?'今日はお休み。休むのも練習のうち。また明日から':'この日はお休みにしました')
+                               : (isToday?'今日はお休みの日です。しっかり体を休めよう':'この日はお休みの日です');
+    $('rest').hidden = todays.length>0;
+    var ob=$('offBtn'); ob.hidden=!planned;
+    ob.textContent= off ? 'お休みをやめる' : (isToday?'今日はお休みにする':'この日はお休みにする');
+    $('cheer').textContent=isToday?'今日のタスク、ぜんぶ完了！':'この日のタスク、ぜんぶ完了！';
+    $('cheer').hidden = !todays.length || dc<todays.length || isFuture;
+
+    renderStats();
+    renderPhotos();
+  }
+  function renderStats(){
+    var g=state.goal, t=dkey(), total=0, per={}, full=0;
+    Object.keys(g.checks).forEach(function(k){ (g.checks[k]||[]).forEach(function(id){ total++; per[id]=(per[id]||0)+1; }); });
+    for(var k=g.start, i=0; k<=t && i<2000; k=shift(k,1), i++){
+      if(doneCount(k)>0) full++;
+    }
+    $('sTotal').innerHTML=total+'<small>回</small>';
+    $('sDays').innerHTML=full+'<small>日</small>';
+    $('sBest').innerHTML=monthDays()+'<small>日</small>';
+    $('sSince').textContent=fmt(g.start)+'から';
+    var act=g.tasks.filter(isActive);
+    var max=1; act.forEach(function(x){ if((per[x.id]||0)>max) max=per[x.id]; });
+    var ul=$('sBars'); ul.innerHTML='';
+    act.slice().sort(function(a,b){ return (per[b.id]||0)-(per[a.id]||0); }).forEach(function(x){
+      var c=per[x.id]||0, li=document.createElement('li'); li.className='bar-row';
+      li.innerHTML='<div class="bar-top"><span></span><span class="c">'+c+'回</span></div><div class="track"><div class="fill" style="width:'+(c/max*100)+'%"></div></div>';
+      li.querySelector('span').textContent=x.name;
+      ul.appendChild(li);
+    });
+  }
+  function toggle(id, val){
+    var t=vday(), arr=(state.goal.checks[t]||[]).slice();
+    if(t>dkey()) return;
+    var before=doneCount(t);
+    if(val && arr.indexOf(id)<0) arr.push(id);
+    if(!val){ arr=arr.filter(function(x){return x!==id;}); if(state.goal.little&&state.goal.little[t]) state.goal.little[t]=state.goal.little[t].filter(function(x){return x!==id;}); }
+    state.goal.checks[t]=arr;
+    render(); save();
+    var tot=tasksOn(t).length;
+    if(val && doneCount(t)===tot && before<tot) toast('ぜんぶ完了！よくがんばりました');
+  }
+
+  function little(id){
+    var t=vday(), g=state.goal; if(t>dkey()) return;
+    var arr=(g.checks[t]||[]).slice(); if(arr.indexOf(id)<0) arr.push(id); g.checks[t]=arr;
+    g.little=g.little||{}; var l=(g.little[t]||[]).slice(); if(l.indexOf(id)<0) l.push(id); g.little[t]=l;
+    render(); save(); toast('ちょっとでも1回。やった日に入れました');
+  }
+  $('offBtn').onclick=function(){
+    var k=vday(), g=state.goal; g.off=g.off||{};
+    if(g.off[k]){ delete g.off[k]; toast('お休みをやめました'); }
+    else { g.off[k]=true; toast(k===dkey()?'今日はお休み。休むのも練習のうち':'お休みにしました'); }
+    render(); save();
+  };
+
+  /* ---------- photos ---------- */
+  function photoSrc(p){ return p.data ? p.data : '/_blob/'+p.assetId; }
+  function setFrame(fr, cap, p, empty){
+    if(!p){ fr.innerHTML=empty; cap.textContent=''; return; }
+    fr.innerHTML=''; var img=new Image(); img.alt=fmt(p.date)+'の写真'; img.src=photoSrc(p);
+    img.onerror=function(){ fr.textContent='写真を読み込めませんでした'; };
+    fr.appendChild(img); cap.textContent=fmt(p.date);
+    if(p.angle && p.angle.pts && p.angle.pts.length===3){
+      var NS='http://www.w3.org/2000/svg', svg=document.createElementNS(NS,'svg');
+      svg.setAttribute('preserveAspectRatio','xMidYMid slice'); svg.setAttribute('aria-hidden','true');
+      fr.appendChild(svg);
+      img.addEventListener('load', function(){
+        var W=img.naturalWidth, H=img.naturalHeight, lw=Math.max(3, W/120);
+        svg.setAttribute('viewBox','0 0 '+W+' '+H);
+        var q=p.angle.pts.map(function(t){ return [t[0]*W, t[1]*H]; });
+        function line(a,b,col,w){ var l=document.createElementNS(NS,'line'); l.setAttribute('x1',a[0]); l.setAttribute('y1',a[1]); l.setAttribute('x2',b[0]); l.setAttribute('y2',b[1]); l.setAttribute('stroke',col); l.setAttribute('stroke-width',w); l.setAttribute('stroke-linecap','round'); svg.appendChild(l); }
+        [[q[0],q[1]],[q[0],q[2]]].forEach(function(s2){ line(s2[0],s2[1],'rgba(0,0,0,.55)',lw*1.8); line(s2[0],s2[1],'#ffffff',lw); });
+        q.forEach(function(t){ var c=document.createElementNS(NS,'circle'); c.setAttribute('cx',t[0]); c.setAttribute('cy',t[1]); c.setAttribute('r',lw*1.4); c.setAttribute('fill','#ffffff'); c.setAttribute('stroke','rgba(0,0,0,.55)'); c.setAttribute('stroke-width',lw*.5); svg.appendChild(c); });
+      });
+    }
+  }
+  function renderPhotos(){
+    var ps=state.goal.photos.slice().sort(function(a,b){ return a.date<b.date?-1:a.date>b.date?1:((a.at||0)-(b.at||0)); });
+    var perDay={}, nth={}; ps.forEach(function(p){ perDay[p.date]=(perDay[p.date]||0)+1; nth[p.id]=perDay[p.date]; });
+    var NUM='①②③④⑤⑥⑦⑧⑨⑩';
+    function plabel(p){ return fmt(p.date)+(perDay[p.date]>1?' '+(NUM.charAt(nth[p.id]-1)||('#'+nth[p.id])):''); }
+    $('pCount').textContent=ps.length+'枚'+(state.goal.photoDay!=null?'・毎週'+WD[state.goal.photoDay]+'曜に撮影':'');
+    var a=$('selA'), b=$('selB'), va=a.value, vb=b.value;
+    [a,b].forEach(function(s){ s.innerHTML=''; s.hidden=ps.length<2; });
+    ps.forEach(function(p,i){
+      [a,b].forEach(function(s){ var o=document.createElement('option'); o.value=p.id; o.textContent=plabel(p)+(i===0?'・最初':(i===ps.length-1?'・最新':'')); s.appendChild(o); });
+    });
+    var grew = ps.length !== renderPhotos.n; renderPhotos.n = ps.length; // a new photo: show first vs newest again
+    if(ps.length){
+      a.value = (!grew && ps.some(function(p){return p.id===va;})) ? va : ps[0].id;
+      b.value = (!grew && ps.some(function(p){return p.id===vb;})) ? vb : ps[ps.length-1].id;
+    }
+    var pa=ps.filter(function(p){return p.id===a.value;})[0];
+    var pb=ps.length>1 ? ps.filter(function(p){return p.id===b.value;})[0] : null;
+    setFrame($('frA'),$('capA'),pa,'写真を追加すると<br>ここに出ます'); if(pa) $('capA').textContent=plabel(pa)+(pa.angle?'　'+pa.angle.deg+'°':'');
+    setFrame($('frB'),$('capB'),pb,'2枚目から<br>比べられます'); if(pb) $('capB').textContent=plabel(pb)+(pb.angle?'　'+pb.angle.deg+'°':'');
+    [['btnsA',pa],['btnsB',pb]].forEach(function(x){ var el=$(x[0]), ph=x[1]; el.hidden=!ph; el.dataset.id=ph?ph.id:'';
+      var db=el.querySelector('[data-act="del"]'); var armed=ph && delArm===ph.id; db.textContent=armed?'本当に消す？':'消す'; db.classList.toggle('warn', !!armed);
+      el.querySelector('[data-act="angle"]').textContent=(ph&&ph.angle)?'角度を直す':'角度を測る';
+      var de=$(x[0]==='btnsA'?'deA':'deB'), editing=!!ph && dateEdit===ph.id && !(x[0]==='btnsB' && pa && pa.id===ph.id);
+      de.hidden=!editing; de.dataset.id=ph?ph.id:'';
+      var di=de.querySelector('input');
+      if(editing){ di.max=dkey(); if(di.dataset.for!==ph.id){ di.value=ph.date; di.dataset.for=ph.id; } }
+      else di.dataset.for=''; });
+    var df=$('diff');
+    if(pa && pb){ var n=Math.abs(daysBetween(pa.date,pb.date)); df.hidden=false; df.textContent=(n? n+'日間の変化' : '同じ日の写真です')+((pa.angle&&pb.angle)?'　角度 '+((pb.angle.deg-pa.angle.deg)>=0?'+':'')+(pb.angle.deg-pa.angle.deg)+'°':''); }
+    else df.hidden=true;
+  }
+  $('selA').onchange=renderPhotos; $('selB').onchange=renderPhotos;
+
+  function shrink(file){
+    return new Promise(function(res, rej){
+      var url=URL.createObjectURL(file), img=new Image();
+      img.onload=function(){
+        var max=1080, s=Math.min(1, max/Math.max(img.width,img.height));
+        var c=document.createElement('canvas'); c.width=Math.round(img.width*s); c.height=Math.round(img.height*s);
+        c.getContext('2d').drawImage(img,0,0,c.width,c.height); URL.revokeObjectURL(url);
+        c.toBlob(function(b){ b?res({blob:b, canvas:c}):rej(new Error('encode')); }, 'image/jpeg', 0.82);
+      };
+      img.onerror=function(){ URL.revokeObjectURL(url); rej(new Error('decode')); };
+      img.src=url;
+    });
+  }
+  function toJpeg(c){ return new Promise(function(res, rej){ c.toBlob(function(b){ b?res(b):rej(new Error('encode')); }, 'image/jpeg', 0.82); }); }
+
+  /* face blur editor: everything happens on this device; only the blurred image is saved */
+  var peState=null;
+  function editPhoto(src, i, total, date){
+    return new Promise(function(resolve){
+      var pd=$('peDate'); pd.max=dkey(); pd.value=date||dkey();
+      var cv=$('peCanvas'); cv.width=src.width; cv.height=src.height;
+      peState={ src:src, rects:[], drag:null, resolve:resolve };
+      $('peCount').textContent = total>1 ? (i+1)+' / '+total+'枚目' : '';
+      peDraw(); $('pe').hidden=false; document.body.style.overflow='hidden';
+      setTimeout(function(){ $('peOk').focus(); }, 0);
+    });
+  }
+  function pixelate(ctx, src, r){
+    var bs=Math.max(10, Math.round(Math.min(r.w,r.h)/7));
+    var tw=Math.max(1,Math.ceil(r.w/bs)), th=Math.max(1,Math.ceil(r.h/bs));
+    var t=document.createElement('canvas'); t.width=tw; t.height=th;
+    t.getContext('2d').drawImage(src, r.x, r.y, r.w, r.h, 0, 0, tw, th);
+    ctx.imageSmoothingEnabled=false; ctx.drawImage(t, 0, 0, tw, th, r.x, r.y, r.w, r.h); ctx.imageSmoothingEnabled=true;
+  }
+  function boxOf(d){ return { x:Math.min(d.x0,d.x1), y:Math.min(d.y0,d.y1), w:Math.abs(d.x1-d.x0), h:Math.abs(d.y1-d.y0) }; }
+  function peRender(target, guide){
+    var ctx=target.getContext('2d'); ctx.drawImage(peState.src, 0, 0);
+    peState.rects.forEach(function(r){ pixelate(ctx, peState.src, r); });
+    if(guide && peState.drag){
+      var d=boxOf(peState.drag), lw=Math.max(2, target.width/220);
+      ctx.save(); ctx.lineWidth=lw; ctx.setLineDash([lw*3, lw*2]);
+      ctx.strokeStyle='#ffffff'; ctx.strokeRect(d.x, d.y, d.w, d.h);
+      ctx.lineDashOffset=lw*3; ctx.strokeStyle='rgba(0,0,0,.65)'; ctx.strokeRect(d.x, d.y, d.w, d.h);
+      ctx.restore();
+    }
+  }
+  function peDraw(){ peRender($('peCanvas'), true); $('peOk').textContent = peState.rects.length ? 'ぼかして保存' : 'ぼかさずに保存'; $('peUndo').disabled = !peState.rects.length; }
+  function pePoint(e){ var cv=$('peCanvas'), b=cv.getBoundingClientRect(); return { x:(e.clientX-b.left)*cv.width/b.width, y:(e.clientY-b.top)*cv.height/b.height }; }
+  (function(){
+    var cv=$('peCanvas');
+    cv.addEventListener('pointerdown', function(e){ if(!peState) return; e.preventDefault(); try{ cv.setPointerCapture(e.pointerId); }catch(_){} var p=pePoint(e); peState.drag={ x0:p.x, y0:p.y, x1:p.x, y1:p.y }; peDraw(); });
+    cv.addEventListener('pointermove', function(e){ if(!peState || !peState.drag) return; var p=pePoint(e); peState.drag.x1=p.x; peState.drag.y1=p.y; peDraw(); });
+    function end(){
+      if(!peState || !peState.drag) return;
+      var W=cv.width, H=cv.height, r=boxOf(peState.drag); peState.drag=null;
+      if(r.w < W*0.03 && r.h < H*0.03){ var sz=Math.round(Math.min(W,H)*0.22); r={ x:r.x-sz/2, y:r.y-sz/2, w:sz, h:sz }; } // a tap = a face-sized square
+      r.x=Math.max(0,Math.round(r.x)); r.y=Math.max(0,Math.round(r.y));
+      r.w=Math.min(W-r.x, Math.round(r.w)); r.h=Math.min(H-r.y, Math.round(r.h));
+      if(r.w>4 && r.h>4) peState.rects.push(r);
+      peDraw();
+    }
+    cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
+  })();
+  function peClose(result){ var st=peState; peState=null; $('pe').hidden=true; document.body.style.overflow=''; if(st) st.resolve(result); }
+  $('peUndo').onclick=function(){ if(peState){ peState.rects.pop(); peDraw(); } };
+  $('peSkip').onclick=function(){ peClose(null); };
+  $('peOk').onclick=function(){ if(!peState) return; var out=document.createElement('canvas'); out.width=peState.src.width; out.height=peState.src.height; peRender(out, false); var d=$('peDate').value; if(!d || d>dkey()) d=dkey(); peClose({ canvas:out, date:d }); };
+  document.addEventListener('keydown', function(e){ if(peState && e.key==='Escape') peClose(null); });
+
+  $('photoInput').addEventListener('change', async function(e){
+    var files=[].slice.call(e.target.files||[]); e.target.value='';
+    if(!files.length) return;
+    var lbl=$('addPhotoBtn'), added=0, failed=0, big=false, base=Date.now(), lastDate=null;
+    for(var i=0;i<files.length;i++){
+      var out;
+      try{ out=await shrink(files[i]); }catch(err){ failed++; continue; }
+      // default 撮った日: the file's date if it is before today (often the shooting date), else the date chosen for the previous photo
+      var fd=files[i].lastModified ? dkey(new Date(files[i].lastModified)) : null;
+      var res=await editPhoto(out.canvas, i, files.length, (fd && fd<dkey()) ? fd : (lastDate||dkey()));
+      if(!res) continue;
+      var edited=res.canvas; lastDate=res.date;
+      lbl.textContent='保存中…';
+      try{
+        var entry={ id: rid(), date: res.date, at: base+i };
+        entry.data=edited.toDataURL('image/jpeg',0.7);
+        if(canSave && idb) await photoPut(entry.id, entry.data);
+        state.goal.photos.push(entry); added++;
+        save();
+        render();
+      }catch(err){ failed++; if(err && err.code==='too_large') big=true; }
+    }
+    lbl.textContent='写真を追加';
+    if(added) toast(((canSave&&idb)?'写真を'+added+'枚記録しました':'写真を追加しました（このブラウザでは保存されません）')+(failed?'（'+failed+'枚は追加できませんでした）':''));
+    else if(failed) toast(big?'写真が大きすぎます。別の写真でお試しください':'写真を追加できませんでした。JPEGかPNGの写真でお試しください');
+  });
+
+  /* delete a photo: tap 消す twice */
+  var delArm=null, delT=null;
+  function photoById(id){ return state.goal.photos.filter(function(p){ return p.id===id; })[0]; }
+  function onShotBtn(e){
+    var b=e.target.closest('button'); if(!b) return;
+    var p=photoById(this.dataset.id); if(!p) return;
+    if(b.dataset.act==='angle'){ openAngle(p); return; }
+    if(b.dataset.act==='date'){ dateEdit=(dateEdit===p.id)?null:p.id; renderPhotos(); return; }
+    if(delArm!==p.id){ delArm=p.id; clearTimeout(delT); delT=setTimeout(function(){ delArm=null; renderPhotos(); }, 4000); renderPhotos(); return; }
+    delArm=null; clearTimeout(delT);
+    state.goal.photos=state.goal.photos.filter(function(x){ return x.id!==p.id; });
+    photoDel(p.id);
+    save(); render(); toast('写真を消しました');
+  }
+  $('btnsA').onclick=onShotBtn; $('btnsB').onclick=onShotBtn;
+  /* change the 撮った日 of a saved photo */
+  var dateEdit=null;
+  function onDateEdit(e){
+    var b=e.target.closest('button'); if(!b) return;
+    var p=photoById(this.dataset.id); dateEdit=null;
+    if(b.dataset.act==='dsave' && p){
+      var v=this.querySelector('input').value;
+      if(!v){ toast('日付を選んでください'); dateEdit=p.id; return; }
+      if(v>dkey()){ toast('先の日付にはできません'); dateEdit=p.id; return; }
+      p.date=v; save(); toast('撮った日を'+fmt(v)+'にしました');
+    }
+    renderPhotos();
+  }
+  $('deA').onclick=onDateEdit; $('deB').onclick=onDateEdit;
+
+  /* protractor: tap hip, standing-leg toe, raised-leg toe */
+  var amState=null;
+  var AM_HINT=['① 腰（足の付け根）をタップ','② 軸足のつま先をタップ','③ 上げた足のつま先をタップ','点は指でドラッグして動かせます'];
+  function angDeg(a,b,c){ var x1=b.x-a.x, y1=b.y-a.y, x2=c.x-a.x, y2=c.y-a.y, m=Math.hypot(x1,y1)*Math.hypot(x2,y2); if(!m) return 0; return Math.round(Math.acos(Math.max(-1,Math.min(1,(x1*x2+y1*y2)/m)))*180/Math.PI); }
+  function openAngle(p){
+    var img=new Image();
+    img.onload=function(){
+      var cv=$('amCanvas'); cv.width=img.naturalWidth; cv.height=img.naturalHeight;
+      var pts=(p.angle&&p.angle.pts&&p.angle.pts.length===3)? p.angle.pts.map(function(t){ return {x:t[0]*cv.width, y:t[1]*cv.height}; }) : [];
+      amState={ p:p, img:img, pts:pts, drag:-1 };
+      $('amClear').hidden=!p.angle; amDraw(); $('am').hidden=false; document.body.style.overflow='hidden';
+    };
+    img.onerror=function(){ toast('写真を読み込めませんでした'); };
+    img.src=photoSrc(p);
+  }
+  function amDraw(){
+    var cv=$('amCanvas'), ctx=cv.getContext('2d'), W=cv.width, s=amState, P=s.pts, lw=Math.max(3, W/110);
+    ctx.drawImage(s.img,0,0);
+    function seg(a,b){ ctx.lineCap='round'; ctx.strokeStyle='rgba(0,0,0,.55)'; ctx.lineWidth=lw*1.8; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); ctx.strokeStyle='#ffffff'; ctx.lineWidth=lw; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); }
+    if(P.length>=2) seg(P[0],P[1]);
+    var deg=null;
+    if(P.length===3){
+      seg(P[0],P[2]); deg=angDeg(P[0],P[1],P[2]);
+      var a1=Math.atan2(P[1].y-P[0].y,P[1].x-P[0].x), a2=Math.atan2(P[2].y-P[0].y,P[2].x-P[0].x), d=a2-a1;
+      while(d>Math.PI) d-=2*Math.PI; while(d<-Math.PI) d+=2*Math.PI;
+      var r=Math.min(Math.hypot(P[1].x-P[0].x,P[1].y-P[0].y), Math.hypot(P[2].x-P[0].x,P[2].y-P[0].y))*0.28;
+      ctx.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#c2456c'; ctx.lineWidth=lw;
+      ctx.beginPath(); ctx.arc(P[0].x,P[0].y,r,a1,a1+d,d<0); ctx.stroke();
+      var mid=a1+d/2, fs=Math.round(W/14), tx=P[0].x+Math.cos(mid)*(r+fs*0.9), ty=P[0].y+Math.sin(mid)*(r+fs*0.9);
+      ctx.font='700 '+fs+'px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.lineWidth=fs/6; ctx.strokeStyle='rgba(0,0,0,.6)'; ctx.strokeText(deg+'°',tx,ty); ctx.fillStyle='#ffffff'; ctx.fillText(deg+'°',tx,ty);
+    }
+    P.forEach(function(t,i){ ctx.beginPath(); ctx.arc(t.x,t.y,lw*3.2,0,2*Math.PI); ctx.fillStyle='#ffffff'; ctx.fill(); ctx.lineWidth=lw*0.6; ctx.strokeStyle='rgba(0,0,0,.6)'; ctx.stroke();
+      ctx.fillStyle='#2a2031'; ctx.font='700 '+Math.round(lw*3.6)+'px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(String(i+1),t.x,t.y); });
+    $('amHint').textContent=AM_HINT[Math.min(P.length,3)];
+    $('amDeg').textContent=deg!=null? deg+'°' : '';
+    $('amOk').disabled=(deg==null);
+  }
+  (function(){
+    var cv=$('amCanvas');
+    function pt(e){ var b=cv.getBoundingClientRect(); return { x:(e.clientX-b.left)*cv.width/b.width, y:(e.clientY-b.top)*cv.height/b.height }; }
+    cv.addEventListener('pointerdown', function(e){
+      if(!amState) return; e.preventDefault(); try{ cv.setPointerCapture(e.pointerId); }catch(_){}
+      var q=pt(e), P=amState.pts, best=-1, bd=cv.width*0.07;
+      P.forEach(function(t,i){ var d=Math.hypot(t.x-q.x,t.y-q.y); if(d<bd){ bd=d; best=i; } });
+      if(best>=0) amState.drag=best; else if(P.length<3){ P.push(q); amState.drag=P.length-1; }
+      amDraw();
+    });
+    cv.addEventListener('pointermove', function(e){ if(!amState || amState.drag<0) return; var q=pt(e); amState.pts[amState.drag]=q; amDraw(); });
+    function up(){ if(amState) amState.drag=-1; }
+    cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+  })();
+  function amClose(){ amState=null; $('am').hidden=true; document.body.style.overflow=''; }
+  $('amReset').onclick=function(){ if(amState){ amState.pts=[]; amDraw(); } };
+  $('amCancel').onclick=amClose;
+  $('amClear').onclick=function(){ if(!amState) return; delete amState.p.angle; amClose(); save(); render(); toast('角度の記録を消しました'); };
+  $('amOk').onclick=function(){
+    if(!amState || amState.pts.length<3) return;
+    var cv=$('amCanvas'), P=amState.pts, deg=angDeg(P[0],P[1],P[2]);
+    amState.p.angle={ deg:deg, pts:P.map(function(t){ return [Math.round(t.x/cv.width*1000)/1000, Math.round(t.y/cv.height*1000)/1000]; }) };
+    amClose(); save(); render(); toast('角度を記録しました：'+deg+'°');
+  };
+  document.addEventListener('keydown', function(e){ if(amState && e.key==='Escape') amClose(); });
+
+  $('editGoal').onclick=function(){ showSetup(true); };
+
+  /* ---------- this week ---------- */
+  function weekStart(k){ var d=parseKey(k); d.setDate(d.getDate()-((d.getDay()+6)%7)); return dkey(d); }
+  function md(k){ var d=parseKey(k); return (d.getMonth()+1)+'/'+d.getDate(); }
+  function renderWeek(t){
+    var g=state.goal, ws=weekStart(t), wk=(g.weeks&&g.weeks[ws])||{};
+    $('wRange').textContent=md(ws)+'〜'+md(shift(ws,6));
+    var tx=$('wText');
+    if(wk.goal){ tx.textContent=wk.goal; tx.className='wtext'; if(wk.done){ var b=document.createElement('span'); b.className='wbadge'; b.textContent='達成'; tx.appendChild(b); } }
+    else { tx.textContent='まだ決めていません。今週達成したいことを1つ書こう'; tx.className='wtext empty'; }
+    $('wEdit').textContent=wk.goal?'書きなおす':'書く';
+    $('wDone').hidden=!wk.goal;
+    $('wDone').textContent=wk.done?'達成を取り消す':'達成！';
+    $('wDone').className=wk.done?'btn small quiet':'btn small';
+    var items=wk.items||[], wl=$('wItems'), idone=0; wl.innerHTML='';
+    items.forEach(function(it){
+      if(it.done) idone++;
+      var li=document.createElement('li'); li.className='task-li';
+      li.innerHTML='<label class="task'+(it.done?' on':'')+'"><input type="checkbox" id="wi-'+it.id+'"'+(it.done?' checked':'')+'><span class="box">'+CHECK+'</span><span class="tx"><span class="tname"></span></span></label><button type="button" class="mv" aria-label="このタスクを削除">×</button>';
+      li.querySelector('.tname').textContent=it.text;
+      li.querySelector('input').addEventListener('change', function(ev){ var c=curWeek(); (c.items||[]).forEach(function(x){ if(x.id===it.id) x.done=ev.target.checked; }); render(); save(); if(ev.target.checked && c.items.every(function(x){return x.done;})) toast('今週だけのタスク、ぜんぶ完了！'); });
+      li.querySelector('.mv').onclick=function(){ var c=curWeek(); c.items=(c.items||[]).filter(function(x){ return x.id!==it.id; }); render(); save(); };
+      wl.appendChild(li);
+    });
+    $('wItemsCount').textContent=items.length ? idone+' / '+items.length : '';
+    $('wAi').hidden=!(sampleFn && wk.goal);
+    var total=0, done=0, w=$('week'); w.innerHTML='';
+    for(var i=0;i<7;i++){
+      var k=shift(ws,i), tot=tasksOn(k).length, fut=k>t, c=fut?0:doneCount(k);
+      total+=tot; done+=c;
+      var el=document.createElement('div'); el.className='day'+(k===t?' today':'')+(k===vday()?' viewing':'')+(k>=g.start&&k<=shift(t,7)?' pick':'');
+      if(k>=g.start&&k<=shift(t,7)){ (function(kk){ el.tabIndex=0; el.setAttribute('role','button'); el.setAttribute('aria-label',fmt(kk)+'のタスクを見る'); el.onclick=function(){ pickDay(kk); }; el.onkeydown=function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); pickDay(kk); } }; })(k); }
+      var cls=fut?' future':((!tot||c===0)?'':(c>=tot?' full':' part'));
+      el.innerHTML='<div class="dot'+cls+'">'+(!tot?'休':(fut?'':(c>=tot?'✓':(c?c+'/'+tot:''))))+'</div><span class="lbl">'+(k===t?'今日':WD[parseKey(k).getDay()])+'</span>';
+      el.title=fmt(k)+' '+c+'/'+tot;
+      w.appendChild(el);
+    }
+    var pct=total?Math.round(done/total*100):0;
+    $('wPct').textContent=done+' / '+total+'（'+pct+'%）';
+    $('wFill').style.width=pct+'%';
+    var lw=g.weeks&&g.weeks[shift(ws,-7)], ll=$('wLast');
+    ll.hidden=!(lw&&lw.goal);
+    ll.className='meta lastrow';
+    if(lw&&lw.goal){
+      ll.innerHTML='<span></span><button type="button" class="btn small '+(lw.done?'quiet':'ghost')+'"></button>';
+      ll.querySelector('span').textContent='先週の目標：'+lw.goal+(lw.done?'（達成）':'');
+      var lb=ll.querySelector('button'); lb.textContent=lw.done?'達成を取り消す':'達成にする';
+      lb.onclick=function(){ lw.done=!lw.done; render(); save(); toast(lw.done?'先週の目標を達成にしました。おめでとう！':'達成を取り消しました'); };
+    }
+    // photo day banner
+    var pd=$('photoDay');
+    if(g.photoDay!=null && parseKey(t).getDay()===g.photoDay){
+      var has=g.photos.some(function(p){ return p.date===t; });
+      pd.hidden=false;
+      pd.innerHTML = has ? '<span>今日は写真の日。記録できました ✓</span>' : '<span>今日は写真の日です</span><label class="btn small" for="photoInput">写真を撮る</label>';
+    } else pd.hidden=true;
+  }
+  function curWeek(){ var g=state.goal, ws=weekStart(dkey()); g.weeks=g.weeks||{}; g.weeks[ws]=g.weeks[ws]||{}; return g.weeks[ws]; }
+  $('wEdit').onclick=function(){ var wk=curWeek(); $('wInput').value=wk.goal||''; $('wView').hidden=true; $('wForm').hidden=false; $('wInput').focus(); };
+  $('wForm').addEventListener('submit', function(e){
+    e.preventDefault(); var v=$('wInput').value.trim(), wk=curWeek();
+    if(v!==wk.goal){ wk.goal=v; wk.done=false; }
+    $('wForm').hidden=true; $('wView').hidden=false; render(); save();
+    if(v) toast('今週の目標をセットしました');
+  });
+  $('wDone').onclick=function(){ var wk=curWeek(); wk.done=!wk.done; render(); save(); if(wk.done) toast('今週の目標、達成！おめでとう'); };
+  function addWeekItems(texts){ var wk=curWeek(); wk.items=wk.items||[]; texts.forEach(function(s){ wk.items.push({ id: rid(), text: s, done: false }); }); render(); save(); }
+  $('wAddForm').addEventListener('submit', function(e){ e.preventDefault(); var v=$('wAddInput').value.trim(); if(!v) return; addWeekItems([v]); $('wAddInput').value=''; });
+  $('wAi').onclick=async function(){
+    var wk=curWeek(), g=state.goal; if(!wk.goal || !sampleFn) return;
+    var b=$('wAi'); b.disabled=true; b.textContent='AIが考え中…';
+    var prompt='あなたは目標達成をサポートするコーチです。ユーザーの「今週の目標」を達成するために、今週中にやるべき具体的なタスクを3〜6個、取り組む順番に考えてください。\n'
+      +'条件：1つのタスクは15〜60分で終わる大きさ。短く具体的な日本語（20文字前後）。毎日のタスクや、すでにあるタスクと重ならないこと。\n'
+      +'大きな目標：'+g.title+'（期限 '+g.deadline+'）\n'
+      +'今週の目標：'+wk.goal+'\n'
+      +'毎日のタスク：'+g.tasks.filter(isActive).map(function(t){return t.name;}).join('、')+'\n'
+      +((wk.items&&wk.items.length)?'すでにある今週のタスク：'+wk.items.map(function(i){return i.text;}).join('、')+'\n':'')
+      +'出力はJSONのみ：{"tasks":["タスク1","タスク2"]}';
+    try{
+      var res=await sampleFn.json(prompt, { modelTier: 'default', cache: false });
+      var list=((res&&res.tasks)||[]).filter(function(s){ return typeof s==='string' && s.trim(); }).map(function(s){ return s.trim().slice(0,40); }).slice(0,8);
+      if(!list.length) throw { code: 'empty_completion' };
+      var box=$('wAiList'); box.innerHTML='';
+      list.forEach(function(s,i){ var l=document.createElement('label'); l.innerHTML='<input type="checkbox" id="ai-'+i+'" checked><span></span>'; l.querySelector('span').textContent=s; box.appendChild(l); });
+      $('wAiBox').hidden=false;
+    }catch(e){
+      var code=e&&e.code;
+      if(code==='not_granted'||code==='sampling_disabled'||code==='not_declared'||code==='capability_disabled'||code==='capability_removed'){ sampleFn=null; toast('この画面ではAIを使えません。タスクは手で追加してください'); }
+      else if(code==='rate_limited') toast('AIの利用が混み合っています。少し時間をおいてから試してください');
+      else if(code!=='cancelled') toast('うまく考えられませんでした。もう一度試してください');
+    }
+    b.disabled=false; b.textContent='AIにタスクを考えてもらう'; render();
+  };
+  $('wAiOk').onclick=function(){ var picked=[].filter.call($('wAiList').querySelectorAll('label'), function(l){ return l.querySelector('input').checked; }).map(function(l){ return l.querySelector('span').textContent; }); $('wAiBox').hidden=true; if(picked.length){ addWeekItems(picked); toast(picked.length+'個のタスクを追加しました'); } };
+  $('wAiNo').onclick=function(){ $('wAiBox').hidden=true; };
+  $('carryDismiss').onclick=function(){ state.goal.carryDismissed=shift(dkey(),-1); render(); save(); };
+  function setView(k){ viewDate=(k===dkey())?null:k; render(); }
+  function pickDay(k){ setView(k); var h=$('tHead'); if(h&&h.scrollIntoView) h.scrollIntoView({behavior:'smooth',block:'center'}); }
+  $('dPrev').onclick=function(){ var k=shift(vday(),-1); if(k>=state.goal.start) setView(k); };
+  $('dNext').onclick=function(){ var k=shift(vday(),1); if(k<=shift(dkey(),7)) setView(k); };
+  $('dToday').onclick=function(){ setView(dkey()); };
+
+  /* ---------- boot ---------- */
+  async function boot(){
+    try{ localStorage.setItem(LS_KEY+'-test','1'); localStorage.removeItem(LS_KEY+'-test'); canSave=true; }catch(e){ canSave=false; }
+    if(canSave){
+      idb=await idbOpen();
+      try{ var raw=localStorage.getItem(LS_KEY); if(raw){ var d=JSON.parse(raw); if(d && d.goal) state.goal=d.goal; } }catch(e){}
+      if(state.goal && state.goal.photos && idb){
+        for(var i=0;i<state.goal.photos.length;i++){ var p=state.goal.photos[i]; try{ var data=await photoGet(p.id); if(data) p.data=data; }catch(e){} }
+        state.goal.photos=state.goal.photos.filter(function(p){ return p.data; });
+      }
+    }
+    $('saveNote').hidden=canSave; $('localNote').hidden=!canSave;
+    if(state.goal) showHome(); else showSetup(false);
+  }
+  boot();
+})();
+</script>
+
+</body>
+</html>
