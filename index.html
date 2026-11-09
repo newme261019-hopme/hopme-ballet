@@ -161,6 +161,9 @@ input:focus{outline:2px solid var(--accent);outline-offset:1px}
 .carry-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
 .carry-row{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:14px}
 .carry-row span{min-width:0}
+.gate ol{margin:0;padding-left:1.4em;display:flex;flex-direction:column;gap:6px;font-size:15px}
+.gate .why{font-size:14px;color:var(--ink);background:var(--accent-soft);border-radius:12px;padding:10px 14px;margin:0}
+.gate .gate-actions{display:flex;flex-direction:column;gap:6px}
 .btn.small{font-size:13px;padding:7px 12px;border-radius:10px;flex:none}
 .witems{display:flex;flex-direction:column;gap:8px}
 .aiprop{background:var(--accent-soft);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
@@ -213,8 +216,24 @@ input:focus{outline:2px solid var(--accent);outline-offset:1px}
     <div class="tag">テスト版</div>
   </div>
   <div id="saveNote" class="note" hidden>このブラウザでは記録を保存できません（プライベートブラウズでは保存されません）。</div>
-  <div id="localNote" class="note">記録と写真は、このスマホの中だけに保存されます（だれにも送られません）。ブラウザのデータを消したり、機種変更すると消えます。</div>
+  <div id="localNote" class="note">記録と写真は、このスマホの中だけに保存されます（だれにも送られません）。Safariの「履歴とWebサイトデータを消去」をしたり、機種変更すると消えます。</div>
   <div id="loading" class="loading">読み込み中…</div>
+
+  <!-- First visit in Safari: ask to add to the home screen first (Safari and the home-screen icon keep separate records) -->
+  <section id="gate" class="card gate" hidden>
+    <div class="card-head"><h2>はじめに、ホーム画面に追加してください</h2></div>
+    <p class="why">Safariで入れた目標や記録は、ホーム画面のアイコンには引き継がれません。目標を決める前に、先に追加をお願いします。</p>
+    <ol>
+      <li>画面下の「≡」（またはバーの「共有」ボタン）を押す</li>
+      <li>「共有」を押す</li>
+      <li>「ホーム画面に追加」を押す（見つからなければ下へスクロール）</li>
+      <li>「追加」を押す</li>
+      <li>ホーム画面にできたアイコンから開き直す</li>
+    </ol>
+    <div class="gate-actions">
+      <button type="button" class="btn quiet" id="gateSkip">ホーム画面に追加せず、このまま使う</button>
+    </div>
+  </section>
 
   <!-- Setup -->
   <form id="setup" class="card" hidden>
@@ -995,8 +1014,13 @@ input:focus{outline:2px solid var(--accent);outline-offset:1px}
       }
     }
     $('saveNote').hidden=canSave; $('localNote').hidden=!canSave;
+    var standalone=(window.navigator.standalone===true)||(window.matchMedia&&matchMedia('(display-mode: standalone)').matches);
+    var ios=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+    var skipped=false; try{ skipped=localStorage.getItem(LS_KEY+'-gate')==='skip'; }catch(e){}
+    if(!state.goal && ios && !standalone && !skipped){ $('loading').hidden=true; $('gate').hidden=false; return; }
     if(state.goal) showHome(); else showSetup(false);
   }
+  $('gateSkip').onclick=function(){ try{ localStorage.setItem(LS_KEY+'-gate','skip'); }catch(e){} $('gate').hidden=true; showSetup(false); };
   boot();
 })();
 </script>
