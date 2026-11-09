@@ -244,8 +244,9 @@ input:focus{outline:2px solid var(--accent);outline-offset:1px}
       <span class="hint">例は入れてあります。自分の言葉に書きかえてください</span>
     </div>
     <div class="field">
-      <label for="gDeadline">期限（発表会・試験日など）</label>
+      <label for="gDeadline">期限（目指したい日）</label>
       <input id="gDeadline" type="date" required>
+      <span class="hint">おすすめは3か月後です（最初から3か月後の日付が入っています）</span>
     </div>
     <div class="field">
       <label for="gPhotoDay">写真を撮る曜日</label>
@@ -450,7 +451,7 @@ input:focus{outline:2px solid var(--accent);outline-offset:1px}
   }
   function showSetup(editing){
     var g = editing ? state.goal : null;
-    var d = new Date(); d.setDate(d.getDate()+90);
+    var d = new Date(); d.setMonth(d.getMonth()+3);
     $('setupTitle').textContent = editing ? '目標・タスクを編集' : 'あなたの目標を決めよう';
     $('saveGoal').textContent = editing ? '保存する' : 'この目標で始める';
     $('cancelEdit').hidden = !editing;
