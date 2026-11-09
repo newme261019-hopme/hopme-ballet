@@ -454,7 +454,7 @@ input:focus{outline:2px solid var(--accent);outline-offset:1px}
     $('setupTitle').textContent = editing ? '目標・タスクを編集' : 'あなたの目標を決めよう';
     $('saveGoal').textContent = editing ? '保存する' : 'この目標で始める';
     $('cancelEdit').hidden = !editing;
-    $('gTitle').value = g ? g.title : '発表会までに前後開脚で床にぺたっと座る';
+    $('gTitle').value = g ? g.title : '前後開脚で床にぺたっと座る';
     $('gDeadline').value = g ? g.deadline : dkey(d);
     $('gPhotoDay').value = (g && g.photoDay!=null) ? String(g.photoDay) : (g ? '' : '0');
     $('taskInputs').innerHTML='';
