@@ -99,7 +99,8 @@ h1,h2{text-wrap:balance;margin:0}
 .pe-head h2{margin:0;font-size:18px}
 .pe-hint{font-size:13px;color:var(--muted);margin:0;line-height:1.6}
 .pe-stage{display:flex;justify-content:center;background:var(--bg);border-radius:12px;overflow:hidden}
-#peCanvas,#amCanvas{max-width:100%;max-height:56vh;touch-action:none;cursor:crosshair;display:block}
+#peCanvas,#amCanvas,#crCanvas{max-width:100%;max-height:56vh;touch-action:none;cursor:crosshair;display:block}
+#crCanvas{cursor:move}
 .pe-actions{display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap}
 .pe-actions .btn{flex:1 1 auto}
 /* buttons & forms */
@@ -333,8 +334,8 @@ input:focus{outline:2px solid var(--accent);outline-offset:1px}
     <section class="card s-photo">
       <div class="card-head"><h2>写真で比べる</h2><span class="progress" id="pCount"></span></div>
       <div class="compare">
-        <div class="shot"><select id="selA" aria-label="比べる写真（前）"></select><div class="frame" id="frA">写真を追加すると<br>ここに出ます</div><div class="cap" id="capA"></div><div class="shotbtns" id="btnsA" hidden><button type="button" class="mv" data-act="date">日付</button><button type="button" class="mv" data-act="angle">角度を測る</button><button type="button" class="mv" data-act="del">消す</button></div><div class="dedit" id="deA" hidden><input type="date" aria-label="撮った日"><div class="wbtns"><button type="button" class="btn small" data-act="dsave">保存</button><button type="button" class="btn small quiet" data-act="dcancel">やめる</button></div></div></div>
-        <div class="shot"><select id="selB" aria-label="比べる写真（後）"></select><div class="frame" id="frB">2枚目から<br>比べられます</div><div class="cap" id="capB"></div><div class="shotbtns" id="btnsB" hidden><button type="button" class="mv" data-act="date">日付</button><button type="button" class="mv" data-act="angle">角度を測る</button><button type="button" class="mv" data-act="del">消す</button></div><div class="dedit" id="deB" hidden><input type="date" aria-label="撮った日"><div class="wbtns"><button type="button" class="btn small" data-act="dsave">保存</button><button type="button" class="btn small quiet" data-act="dcancel">やめる</button></div></div></div>
+        <div class="shot"><select id="selA" aria-label="比べる写真（前）"></select><div class="frame" id="frA">写真を追加すると<br>ここに出ます</div><div class="cap" id="capA"></div><div class="shotbtns" id="btnsA" hidden><button type="button" class="mv" data-act="date">日付</button><button type="button" class="mv" data-act="crop">切り取る</button><button type="button" class="mv" data-act="angle">角度を測る</button><button type="button" class="mv" data-act="del">消す</button></div><div class="dedit" id="deA" hidden><input type="date" aria-label="撮った日"><div class="wbtns"><button type="button" class="btn small" data-act="dsave">保存</button><button type="button" class="btn small quiet" data-act="dcancel">やめる</button></div></div></div>
+        <div class="shot"><select id="selB" aria-label="比べる写真（後）"></select><div class="frame" id="frB">2枚目から<br>比べられます</div><div class="cap" id="capB"></div><div class="shotbtns" id="btnsB" hidden><button type="button" class="mv" data-act="date">日付</button><button type="button" class="mv" data-act="crop">切り取る</button><button type="button" class="mv" data-act="angle">角度を測る</button><button type="button" class="mv" data-act="del">消す</button></div><div class="dedit" id="deB" hidden><input type="date" aria-label="撮った日"><div class="wbtns"><button type="button" class="btn small" data-act="dsave">保存</button><button type="button" class="btn small quiet" data-act="dcancel">やめる</button></div></div></div>
       </div>
       <div class="diff" id="diff" hidden></div>
       <label class="btn ghost" id="addPhotoBtn" for="photoInput">写真を追加</label>
@@ -352,6 +353,15 @@ input:focus{outline:2px solid var(--accent);outline-offset:1px}
     <div class="pe-stage"><canvas id="peCanvas" aria-label="ぼかす場所を選ぶ写真"></canvas></div>
     <div class="wbtns"><button type="button" class="btn small quiet" id="peUndo">ひとつ戻す</button></div>
     <div class="pe-actions"><button type="button" class="btn ghost" id="peSkip">この写真は入れない</button><button type="button" class="btn" id="peOk">ぼかさずに保存</button></div>
+  </div>
+</div>
+<div class="pe" id="cr" hidden role="dialog" aria-modal="true" aria-labelledby="crTitle">
+  <div class="pe-box">
+    <div class="pe-head"><h2 id="crTitle">写真を切り取る</h2><span class="progress" id="crCount"></span></div>
+    <p class="pe-hint">枠の中を<b>指で動かす</b>と場所が、<b>四すみの丸</b>を引っぱると大きさが変わります。明るい枠の中が「写真で比べる」に出ます。</p>
+    <div class="pe-stage"><canvas id="crCanvas" aria-label="切り取る範囲を選ぶ写真"></canvas></div>
+    <div class="wbtns"><button type="button" class="btn small quiet" id="crReset">枠を元に戻す</button></div>
+    <div class="pe-actions"><button type="button" class="btn ghost" id="crSkip">この写真は入れない</button><button type="button" class="btn" id="crOk">この範囲で次へ</button></div>
   </div>
 </div>
 <div class="pe" id="am" hidden role="dialog" aria-modal="true" aria-labelledby="amTitle">
@@ -680,7 +690,7 @@ input:focus{outline:2px solid var(--accent);outline-offset:1px}
     var ps=state.goal.photos.slice().sort(function(a,b){ return a.date<b.date?-1:a.date>b.date?1:((a.at||0)-(b.at||0)); });
     var perDay={}, nth={}; ps.forEach(function(p){ perDay[p.date]=(perDay[p.date]||0)+1; nth[p.id]=perDay[p.date]; });
     var NUM='①②③④⑤⑥⑦⑧⑨⑩';
-    function plabel(p){ return fmt(p.date)+(perDay[p.date]>1?' '+(NUM.charAt(nth[p.id]-1)||('#'+nth[p.id])):''); }
+    function plabel(p){ return (p.date.slice(0,4)!==dkey().slice(0,4)?p.date.slice(0,4)+'/':'')+fmt(p.date)+(perDay[p.date]>1?' '+(NUM.charAt(nth[p.id]-1)||('#'+nth[p.id])):''); }
     $('pCount').textContent=ps.length+'枚'+(state.goal.photoDay!=null?'・毎週'+WD[state.goal.photoDay]+'曜に撮影':'');
     var a=$('selA'), b=$('selB'), va=a.value, vb=b.value;
     [a,b].forEach(function(s){ s.innerHTML=''; s.hidden=ps.length<2; });
@@ -710,11 +720,11 @@ input:focus{outline:2px solid var(--accent);outline-offset:1px}
   }
   $('selA').onchange=renderPhotos; $('selB').onchange=renderPhotos;
 
-  function shrink(file){
+  function shrink(file, maxSide){
     return new Promise(function(res, rej){
       var url=URL.createObjectURL(file), img=new Image();
       img.onload=function(){
-        var max=1080, s=Math.min(1, max/Math.max(img.width,img.height));
+        var max=maxSide||1080, s=Math.min(1, max/Math.max(img.width,img.height));
         var c=document.createElement('canvas'); c.width=Math.round(img.width*s); c.height=Math.round(img.height*s);
         c.getContext('2d').drawImage(img,0,0,c.width,c.height); URL.revokeObjectURL(url);
         c.toBlob(function(b){ b?res({blob:b, canvas:c}):rej(new Error('encode')); }, 'image/jpeg', 0.82);
@@ -724,6 +734,91 @@ input:focus{outline:2px solid var(--accent);outline-offset:1px}
     });
   }
   function toJpeg(c){ return new Promise(function(res, rej){ c.toBlob(function(b){ b?res(b):rej(new Error('encode')); }, 'image/jpeg', 0.82); }); }
+
+  /* crop: a 3:4 frame (same shape as 写真で比べる), move it / resize from the corners */
+  var CR_RATIO=3/4, crState=null;
+  function crFit(W,H){ var w=W, h=w/CR_RATIO; if(h>H){ h=H; w=h*CR_RATIO; } return { x:(W-w)/2, y:(H-h)/2, w:w, h:h }; }
+  function fitMax(c, max){ var s=Math.min(1, max/Math.max(c.width,c.height)); if(s>=1) return c; var o=document.createElement('canvas'); o.width=Math.round(c.width*s); o.height=Math.round(c.height*s); o.getContext('2d').drawImage(c,0,0,o.width,o.height); return o; }
+  function cropPhoto(src, opt){
+    return new Promise(function(resolve){
+      var cv=$('crCanvas'); cv.width=src.width; cv.height=src.height;
+      crState={ src:src, r:crFit(src.width,src.height), drag:null, resolve:resolve };
+      $('crCount').textContent=opt.count||''; $('crSkip').textContent=opt.skip; $('crOk').textContent=opt.ok;
+      $('cr').hidden=false; document.body.style.overflow='hidden'; crDraw();
+      setTimeout(function(){ $('crOk').focus(); }, 0);
+    });
+  }
+  function crScale(){ var cv=$('crCanvas'), b=cv.getBoundingClientRect(); return b.width ? cv.width/b.width : 1; }
+  function crCorners(r){ return [[r.x,r.y],[r.x+r.w,r.y],[r.x,r.y+r.h],[r.x+r.w,r.y+r.h]]; }
+  function crDraw(){
+    var cv=$('crCanvas'), ctx=cv.getContext('2d'), s=crState, r=s.r, W=cv.width, H=cv.height, k=crScale(), lw=Math.max(1.5, 2*k);
+    ctx.drawImage(s.src,0,0);
+    ctx.fillStyle='rgba(20,14,24,.6)';
+    ctx.fillRect(0,0,W,r.y); ctx.fillRect(0,r.y+r.h,W,H-r.y-r.h); ctx.fillRect(0,r.y,r.x,r.h); ctx.fillRect(r.x+r.w,r.y,W-r.x-r.w,r.h);
+    ctx.strokeStyle='rgba(255,255,255,.5)'; ctx.lineWidth=lw/2; ctx.beginPath();
+    for(var i=1;i<3;i++){ ctx.moveTo(r.x+r.w*i/3,r.y); ctx.lineTo(r.x+r.w*i/3,r.y+r.h); ctx.moveTo(r.x,r.y+r.h*i/3); ctx.lineTo(r.x+r.w,r.y+r.h*i/3); }
+    ctx.stroke();
+    ctx.strokeStyle='#ffffff'; ctx.lineWidth=lw; ctx.strokeRect(r.x,r.y,r.w,r.h);
+    crCorners(r).forEach(function(c){ ctx.beginPath(); ctx.arc(c[0],c[1],9*k,0,2*Math.PI); ctx.fillStyle='#ffffff'; ctx.fill(); ctx.lineWidth=lw; ctx.strokeStyle='rgba(0,0,0,.55)'; ctx.stroke(); });
+  }
+  (function(){
+    var cv=$('crCanvas');
+    function pt(e){ var b=cv.getBoundingClientRect(); return { x:(e.clientX-b.left)*cv.width/b.width, y:(e.clientY-b.top)*cv.height/b.height }; }
+    function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+    function moveTo(q){ var s=crState, r=s.r, d=s.drag; r.x=clamp(q.x-d.dx,0,cv.width-r.w); r.y=clamp(q.y-d.dy,0,cv.height-r.h); }
+    cv.addEventListener('pointerdown', function(e){
+      if(!crState) return; e.preventDefault(); try{ cv.setPointerCapture(e.pointerId); }catch(_){}
+      var q=pt(e), r=crState.r, best=-1, bd=30*crScale(), cs=crCorners(r);
+      cs.forEach(function(c,i){ var d=Math.hypot(c[0]-q.x,c[1]-q.y); if(d<bd){ bd=d; best=i; } });
+      if(best>=0){ var a=cs[3-best]; crState.drag={ size:true, ax:a[0], ay:a[1], sx:cs[best][0]>a[0]?1:-1, sy:cs[best][1]>a[1]?1:-1 }; }
+      else if(q.x>=r.x && q.x<=r.x+r.w && q.y>=r.y && q.y<=r.y+r.h) crState.drag={ dx:q.x-r.x, dy:q.y-r.y };
+      else { crState.drag={ dx:r.w/2, dy:r.h/2 }; moveTo(q); crDraw(); } // tap outside: bring the frame there
+    });
+    cv.addEventListener('pointermove', function(e){
+      if(!crState || !crState.drag) return;
+      var q=pt(e), d=crState.drag, r=crState.r, W=cv.width, H=cv.height;
+      if(!d.size){ moveTo(q); crDraw(); return; }
+      var maxW=Math.min(d.sx>0?W-d.ax:d.ax, (d.sy>0?H-d.ay:d.ay)*CR_RATIO), minW=Math.min(W,H*CR_RATIO)*0.15;
+      var w=clamp(Math.max(Math.abs(q.x-d.ax), Math.abs(q.y-d.ay)*CR_RATIO), Math.min(minW,maxW), maxW), h=w/CR_RATIO;
+      r.w=w; r.h=h; r.x=d.sx>0?d.ax:d.ax-w; r.y=d.sy>0?d.ay:d.ay-h; crDraw();
+    });
+    function up(){ if(crState) crState.drag=null; }
+    cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+  })();
+  function crClose(result){ var st=crState; crState=null; $('cr').hidden=true; document.body.style.overflow=''; if(st) st.resolve(result); }
+  $('crReset').onclick=function(){ if(!crState) return; var cv=$('crCanvas'); crState.r=crFit(cv.width,cv.height); crDraw(); };
+  $('crSkip').onclick=function(){ crClose(null); };
+  $('crOk').onclick=function(){
+    if(!crState) return;
+    var s=crState, W=s.src.width, H=s.src.height, x=Math.max(0,Math.round(s.r.x)), y=Math.max(0,Math.round(s.r.y));
+    var w=Math.max(1,Math.min(W-x,Math.round(s.r.w))), h=Math.max(1,Math.min(H-y,Math.round(s.r.h)));
+    var c=document.createElement('canvas'); c.width=w; c.height=h; c.getContext('2d').drawImage(s.src,x,y,w,h,0,0,w,h);
+    crClose({ canvas:fitMax(c,1080), rect:{ x:x/W, y:y/H, w:w/W, h:h/H } });
+  };
+  document.addEventListener('keydown', function(e){ if(crState && e.key==='Escape') crClose(null); });
+  window.addEventListener('resize', function(){ if(crState) crDraw(); });
+  /* crop a photo that is already saved (the angle lines move with it) */
+  function openCrop(p){
+    var img=new Image();
+    img.onload=async function(){
+      var src=document.createElement('canvas'); src.width=img.naturalWidth; src.height=img.naturalHeight; src.getContext('2d').drawImage(img,0,0);
+      var res=await cropPhoto(src, { skip:'やめる', ok:'この範囲で保存' });
+      if(!res) return;
+      try{ await saveCropped(p, res.canvas); }catch(err){ toast('切り取った写真を保存できませんでした'); return; }
+      var lost=false;
+      if(p.angle && p.angle.pts){
+        var R=res.rect, np=p.angle.pts.map(function(t){ return [Math.round((t[0]-R.x)/R.w*1000)/1000, Math.round((t[1]-R.y)/R.h*1000)/1000]; });
+        if(np.every(function(t){ return t[0]>=0&&t[0]<=1&&t[1]>=0&&t[1]<=1; })) p.angle.pts=np; else { delete p.angle; lost=true; }
+      }
+      save(); render(); toast(lost?'切り取りました（角度の点が枠の外に出たので、角度はもう一度測ってください）':'写真を切り取りました');
+    };
+    img.onerror=function(){ toast('写真を読み込めませんでした'); };
+    img.src=photoSrc(p);
+  }
+  async function saveCropped(p, c){
+    p.data=c.toDataURL('image/jpeg',0.7);
+    if(canSave && idb) await photoPut(p.id, p.data);
+  }
 
   /* face blur editor: everything happens on this device; only the blurred image is saved */
   var peState=null;
@@ -785,10 +880,12 @@ input:focus{outline:2px solid var(--accent);outline-offset:1px}
     var lbl=$('addPhotoBtn'), added=0, failed=0, big=false, base=Date.now(), lastDate=null;
     for(var i=0;i<files.length;i++){
       var out;
-      try{ out=await shrink(files[i]); }catch(err){ failed++; continue; }
+      try{ out=await shrink(files[i], 2000); }catch(err){ failed++; continue; }
+      var cut=await cropPhoto(out.canvas, { count: files.length>1 ? (i+1)+' / '+files.length+'枚目' : '', skip:'この写真は入れない', ok:'この範囲で次へ' });
+      if(!cut) continue;
       // default 撮った日: the file's date if it is before today (often the shooting date), else the date chosen for the previous photo
       var fd=files[i].lastModified ? dkey(new Date(files[i].lastModified)) : null;
-      var res=await editPhoto(out.canvas, i, files.length, (fd && fd<dkey()) ? fd : (lastDate||dkey()));
+      var res=await editPhoto(cut.canvas, i, files.length, (fd && fd<dkey()) ? fd : (lastDate||dkey()));
       if(!res) continue;
       var edited=res.canvas; lastDate=res.date;
       lbl.textContent='保存中…';
@@ -813,6 +910,7 @@ input:focus{outline:2px solid var(--accent);outline-offset:1px}
     var b=e.target.closest('button'); if(!b) return;
     var p=photoById(this.dataset.id); if(!p) return;
     if(b.dataset.act==='angle'){ openAngle(p); return; }
+    if(b.dataset.act==='crop'){ openCrop(p); return; }
     if(b.dataset.act==='date'){ dateEdit=(dateEdit===p.id)?null:p.id; renderPhotos(); return; }
     if(delArm!==p.id){ delArm=p.id; clearTimeout(delT); delT=setTimeout(function(){ delArm=null; renderPhotos(); }, 4000); renderPhotos(); return; }
     delArm=null; clearTimeout(delT);
